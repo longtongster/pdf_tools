@@ -114,7 +114,8 @@ def merge_pdf_list_2(src_dir:str, dst_pdf_path:str):
     with open(dst_pdf_path,"wb") as fw:
         writer.write(fw)
 
-def merge_pdf_list(src_dir:str, dst_pdf_path:str, blank_path:str=None):
+
+def merge_pdf_list(src_dir:str, dst_pdf_path:str, with_blank:bool=False):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
@@ -124,17 +125,18 @@ def merge_pdf_list(src_dir:str, dst_pdf_path:str, blank_path:str=None):
     input_path = Path(src_dir)
     merger = PdfMerger()   # instantiate a pdf writer
 
-    # if blank_path is provided create a blank pdf
-    if blank_path:
-        create_blank_page((blank_path))
+    # if with_blank = True create a temporary blank pdf
+    if with_blank:
+        tmp_path = "--tmp.pdf"
+        create_blank_page(tmp_path)
 
     # go over each pdf in the src_dir and append it to the merger
     for path in input_path.glob("*.pdf"):
         with open(path, "rb") as f:
             merger.append(f, str(path))
             # if there is a blank_path add a blank page
-            if blank_path:
-                with open(blank_path,"rb") as fb:
+            if with_blank:
+                with open(tmp_path,"rb") as fb:
                     merger.append(fb)
                     fb.close()
     # write all pdfs in the merger to dst_pdf_path
@@ -142,10 +144,12 @@ def merge_pdf_list(src_dir:str, dst_pdf_path:str, blank_path:str=None):
         merger.write(fw)
 
     # delete the blank page to keep a clean working space
-    os.remove(blank_path)
+    if with_blank:
+        os.remove(tmp_path)
 
 
 if __name__ == "__main__":
+
     parser = ArgumentParser()
     parser.add_argument("--input-dir", required=True, type=str,
                         help="directory path that contains the pdfs to be converted")
@@ -153,16 +157,18 @@ if __name__ == "__main__":
     parser.add_argument("--output-path", required=True, type=str,
                         help="file path to which file with merged pdfs should be written")
 
+    parser.add_argument("--footer-text", required=True, type=str,
+                        help="text that will be added to the bottom of each page")
+
+    parser.add_argument("--add-blank", type=bool, default=False,
+                        help="flag to determine if you want a blank page between each document")
+
     args = parser.parse_args()
     print(args)
 
-    #input_dir = "./files"
-    #target_path = "./output/final.pdf"
-    #target_path2 = "./output/final2.pdf"
-    blank_page = "./output/blank.pdf"
-    merge_pdf_list(args.input_dir, args.output_path, blank_page)
-    #create_blank_page(blank_page)
+    # temporary path to store merged files without the page numbers
+    tmp_path = "./tmp.pdf"
+    merge_pdf_list(args.input_dir, tmp_path, with_blank=args.add_blank)
 
-    #print(os.listdir("./files"))
-    footer_text = "MGC deck 06-03-2023"
-    add_page_numbers(args.output_path, "output/output.pdf", footer_text)
+    add_page_numbers(tmp_path, args.output_path, args.footer_text)
+    os.remove(tmp_path)
