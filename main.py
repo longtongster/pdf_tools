@@ -13,7 +13,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.colors import grey
 
 
-def create_page_pdf(num, tmp, text):
+def create_page_pdf(num:int, tmp:str, text:str):
     """
     This function creates an empty pdf with only a page number at the bottom and saves
     the result in tmp
@@ -25,12 +25,12 @@ def create_page_pdf(num, tmp, text):
         c.setFont("Times-Roman", 11)
         c.setFillColor(grey)
         # writing footer text to the bottom middle of the page
-        c.drawString((210 // 2) * mm - 20 * mm, (4) * mm, text + f" page {i}")
+        c.drawString((210 // 2) * mm - 20 * mm, (4) * mm, text + f" page {i} of {num}")
         c.showPage()
     c.save()
 
 
-def add_page_numbers(pdf_path, new_path, text):
+def add_page_numbers(pdf_path:str, new_path:str, text:str):
     """
     Add page numbers and a footer to a pdf, saves the result to a new pdf
     :param pdf_path: source pdf
@@ -69,7 +69,19 @@ def add_page_numbers(pdf_path, new_path, text):
         # this is just a 'helper pdf'
         os.remove(tmp)
 
-def merge_pdf_list(src_dir, dst_pdf_path):
+
+def create_blank_page(dst_pdf_path:str):
+    """
+    Creates a blank pdf page of A4 format and writes it to disk
+    :param dst_pdf_path: the file path for the newly created blank pdf
+    """
+    with open(dst_pdf_path, "wb") as f:
+        writer = PdfWriter()
+        writer.add_blank_page(210 * mm, 279 * mm)
+        writer.write(f)
+
+
+def merge_pdf_list(src_dir:str, dst_pdf_path:str):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
@@ -97,42 +109,35 @@ def merge_pdf_list(src_dir, dst_pdf_path):
     with open(dst_pdf_path,"wb") as fw:
         writer.write(fw)
 
-def merge_pdf_list_2(src_dir, dst_pdf_path, blank_path=None):
+def merge_pdf_list_2(src_dir:str, dst_pdf_path:str, blank_path:str=None):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
     :param dst_pdf_path: destination file path to save the merged pdfs
+    :param blank_path: if provided the function will create a blank page and add it between each pdf that is merged
     """
-
-    input_path = Path(input_dir)
+    input_path = Path(src_dir)
     merger = PdfMerger()   # instantiate a pdf writer
-    bookmark_page_number = 0   # initiate the bookmark_page_number
 
+    # if blank_path is provided create a blank pdf
     if blank_path:
         create_blank_page((blank_path))
 
-    # go over each pdf in the src_dir and add it to the writer
+    # go over each pdf in the src_dir and append it to the merger
     for path in input_path.glob("*.pdf"):
         with open(path, "rb") as f:
             merger.append(f, str(path))
-            # add a blank pdf page
+            # if there is a blank_path add a blank page
             if blank_path:
-                fb = open(blank_path, "rb")
-                merger.append(fb)
-                fb.close()
-
+                with open(blank_path,"rb") as fb:
+                    merger.append(fb)
+                    fb.close()
+    # write all pdfs in the merger to dst_pdf_path
     with open(dst_pdf_path, "wb") as fw:
         merger.write(fw)
 
-def create_blank_page(dst_pdf_path) -> list:
-    """
-    Creates a blank pdf page of A4 format
-    :param dst_pdf_path: the file path for the newly created blank pdf
-    """
-    with open(dst_pdf_path, "wb") as f:
-        writer = PdfWriter()
-        writer.add_blank_page(210 * mm, 279 * mm)
-        writer.write(f)
+    # delete the blank page to keep a clean working space
+    os.remove(blank_path)
 
 
 if __name__ == "__main__":
@@ -146,4 +151,4 @@ if __name__ == "__main__":
 
     #print(os.listdir("./files"))
     footer_text = "MGC deck 06-03-2023"
-    add_page_numbers(target_path, "output/output.pdf", footer_text)
+    add_page_numbers(target_path2, "output/output.pdf", footer_text)
