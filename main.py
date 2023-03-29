@@ -18,24 +18,25 @@ from reportlab.lib.units import mm
 from reportlab.lib.colors import grey
 
 
-def create_page_pdf(num:int, tmp:str, text:str):
+def create_page_pdf(num: int, tmp: str, text: str):
     """
     This function creates an empty pdf with only a page number at the bottom and saves
     the result in tmp
     :param num: an integer that determines the number of pages to create in the pdf
     :param tmp: filename used to save the resulting pdf
+    :param text: footer text to be added to the bottom of each page
     """
     c = canvas.Canvas(tmp, pagesize=A4)
     for i in range(1, num + 1):
         c.setFont("Times-Roman", 11)
         c.setFillColor(grey)
         # writing footer text to the bottom middle of the page
-        c.drawString((210 // 2) * mm - 20 * mm, (4) * mm, text + f" page {i} of {num}")
+        c.drawString((210 // 2) * mm - 20 * mm, 4 * mm, text + f" page {i} of {num}")
         c.showPage()
     c.save()
 
 
-def add_page_numbers(pdf_path:str, new_path:str, text:str):
+def add_page_numbers(pdf_path: str, new_path: str, text: str):
     """
     Add page numbers and a footer to a pdf, saves the result to a new pdf
     :param pdf_path: source pdf
@@ -75,7 +76,7 @@ def add_page_numbers(pdf_path:str, new_path:str, text:str):
         os.remove(tmp)
 
 
-def create_blank_page(dst_pdf_path:str):
+def create_blank_page(dst_pdf_path: str):
     """
     Creates a blank pdf page of A4 format and writes it to disk
     :param dst_pdf_path: the file path for the newly created blank pdf
@@ -86,7 +87,7 @@ def create_blank_page(dst_pdf_path:str):
         writer.write(f)
 
 
-def merge_pdf_list_2(src_dir:str, dst_pdf_path:str):
+def merge_pdf_list_2(src_dir: str, dst_pdf_path: str):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
@@ -111,16 +112,16 @@ def merge_pdf_list_2(src_dir:str, dst_pdf_path:str):
         bookmark_page_number += num_pages
 
     # write the output to a pdf on disk
-    with open(dst_pdf_path,"wb") as fw:
+    with open(dst_pdf_path, "wb") as fw:
         writer.write(fw)
 
 
-def merge_pdf_list(src_dir:str, dst_pdf_path:str, with_blank:bool=False):
+def merge_pdf_list(src_dir: str, dst_pdf_path: str, with_blank: bool = False):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
     :param dst_pdf_path: destination file path to save the merged pdfs
-    :param blank_path: if provided the function will create a blank page and add it between each pdf that is merged
+    :param with_blank: if provided the function will create a blank page and add it between each pdf that is merged
     """
     input_path = Path(src_dir)
     merger = PdfMerger()   # instantiate a pdf writer
@@ -136,7 +137,7 @@ def merge_pdf_list(src_dir:str, dst_pdf_path:str, with_blank:bool=False):
             merger.append(f, str(path))
             # if there is a blank_path add a blank page
             if with_blank:
-                with open(tmp_path,"rb") as fb:
+                with open(tmp_path, "rb") as fb:
                     merger.append(fb)
                     fb.close()
     # write all pdfs in the merger to dst_pdf_path
@@ -148,8 +149,7 @@ def merge_pdf_list(src_dir:str, dst_pdf_path:str, with_blank:bool=False):
         os.remove(tmp_path)
 
 
-if __name__ == "__main__":
-
+def parser():
     parser = ArgumentParser()
     parser.add_argument("--input-dir", required=True, type=str,
                         help="directory path that contains the pdfs to be converted")
@@ -160,15 +160,22 @@ if __name__ == "__main__":
     parser.add_argument("--footer-text", required=True, type=str,
                         help="text that will be added to the bottom of each page")
 
-    parser.add_argument("--add-blank", type=bool, default=False,
+    parser.add_argument("--add-blank", type=bool, default=True,
                         help="flag to determine if you want a blank page between each document")
 
+    return parser
+
+
+if __name__ == "__main__":
+
+    parser = parser()
     args = parser.parse_args()
     print(args)
 
-    # temporary path to store merged files without the page numbers
+    # merge all pdfs and store in a temporary file
     tmp_path = "./tmp.pdf"
     merge_pdf_list(args.input_dir, tmp_path, with_blank=args.add_blank)
 
+    # add page numbers and store in user provided location then delete the temporary file
     add_page_numbers(tmp_path, args.output_path, args.footer_text)
     os.remove(tmp_path)
