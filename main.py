@@ -76,7 +76,7 @@ def merge_pdf_list(src_dir, dst_pdf_path):
     :param dst_pdf_path: destination file path to save the merged pdfs
     """
 
-    input_path = Path(input_dir)
+    input_path = Path(src_dir)
     writer = PdfWriter()   # instantiate a pdf writer
     bookmark_page_number = 0   # initiate the bookmark_page_number
 
@@ -97,11 +97,52 @@ def merge_pdf_list(src_dir, dst_pdf_path):
     with open(dst_pdf_path,"wb") as fw:
         writer.write(fw)
 
+def merge_pdf_list_2(src_dir, dst_pdf_path, blank_path=None):
+    """
+    merges a list of pdfs to one big pdf and adds a bookmark for each pdf
+    :param src_dir: source directory that contains the pdfs to merge
+    :param dst_pdf_path: destination file path to save the merged pdfs
+    """
+
+    input_path = Path(input_dir)
+    merger = PdfMerger()   # instantiate a pdf writer
+    bookmark_page_number = 0   # initiate the bookmark_page_number
+
+    if blank_path:
+        create_blank_page((blank_path))
+
+    # go over each pdf in the src_dir and add it to the writer
+    for path in input_path.glob("*.pdf"):
+        with open(path, "rb") as f:
+            merger.append(f, str(path))
+            # add a blank pdf page
+            if blank_path:
+                fb = open(blank_path, "rb")
+                merger.append(fb)
+                fb.close()
+
+    with open(dst_pdf_path, "wb") as fw:
+        merger.write(fw)
+
+def create_blank_page(dst_pdf_path) -> list:
+    """
+    Creates a blank pdf page of A4 format
+    :param dst_pdf_path: the file path for the newly created blank pdf
+    """
+    with open(dst_pdf_path, "wb") as f:
+        writer = PdfWriter()
+        writer.add_blank_page(210 * mm, 279 * mm)
+        writer.write(f)
+
 
 if __name__ == "__main__":
     input_dir = "files"
-    target_path = "output/final.pdf"
+    target_path = "./output/final.pdf"
+    target_path2 = "./output/final2.pdf"
+    blank_page = "./output/blank.pdf"
     merge_pdf_list(input_dir, target_path)
+    merge_pdf_list_2(input_dir, target_path2, blank_page)
+    #create_blank_page(blank_page)
 
     #print(os.listdir("./files"))
     footer_text = "MGC deck 06-03-2023"
