@@ -3,9 +3,14 @@ Code related to the reportlab library was taken from the following reference:
 https://realpython.com/creating-modifying-pdf/
 """
 
+# TODO: Think about the exact flow that is required and make sure the parameters align with this
+# TODO: Blank page should be created as temporary file and removed afterwards
+# TODO: there should be only one final output with page numbers
+
 import os
 from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
+from argparse import ArgumentParser
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
@@ -81,7 +86,7 @@ def create_blank_page(dst_pdf_path:str):
         writer.write(f)
 
 
-def merge_pdf_list(src_dir:str, dst_pdf_path:str):
+def merge_pdf_list_2(src_dir:str, dst_pdf_path:str):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
@@ -109,7 +114,7 @@ def merge_pdf_list(src_dir:str, dst_pdf_path:str):
     with open(dst_pdf_path,"wb") as fw:
         writer.write(fw)
 
-def merge_pdf_list_2(src_dir:str, dst_pdf_path:str, blank_path:str=None):
+def merge_pdf_list(src_dir:str, dst_pdf_path:str, blank_path:str=None):
     """
     merges a list of pdfs to one big pdf and adds a bookmark for each pdf
     :param src_dir: source directory that contains the pdfs to merge
@@ -141,14 +146,23 @@ def merge_pdf_list_2(src_dir:str, dst_pdf_path:str, blank_path:str=None):
 
 
 if __name__ == "__main__":
-    input_dir = "files"
-    target_path = "./output/final.pdf"
-    target_path2 = "./output/final2.pdf"
+    parser = ArgumentParser()
+    parser.add_argument("--input-dir", required=True, type=str,
+                        help="directory path that contains the pdfs to be converted")
+
+    parser.add_argument("--output-path", required=True, type=str,
+                        help="file path to which file with merged pdfs should be written")
+
+    args = parser.parse_args()
+    print(args)
+
+    #input_dir = "./files"
+    #target_path = "./output/final.pdf"
+    #target_path2 = "./output/final2.pdf"
     blank_page = "./output/blank.pdf"
-    merge_pdf_list(input_dir, target_path)
-    merge_pdf_list_2(input_dir, target_path2, blank_page)
+    merge_pdf_list(args.input_dir, args.output_path, blank_page)
     #create_blank_page(blank_page)
 
     #print(os.listdir("./files"))
     footer_text = "MGC deck 06-03-2023"
-    add_page_numbers(target_path2, "output/output.pdf", footer_text)
+    add_page_numbers(args.output_path, "output/output.pdf", footer_text)
