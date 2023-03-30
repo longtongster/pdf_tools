@@ -8,8 +8,6 @@ A flag can be set by the user to add blank page between each pdf file that is me
 Code related to the reportlab library was taken from the following reference:
 https://realpython.com/creating-modifying-pdf/
 """
-
-
 import os
 from pathlib import Path
 from PyPDF2 import PdfReader, PdfWriter, PdfMerger
@@ -39,20 +37,20 @@ def create_page_pdf(num: int, tmp: str, text: str):
     c.save()
 
 
-
 def add_page_numbers(pdf_path: str, new_path: str, text: str, bookmarks: list):
     """
-    Add page numbers and a footer to a pdf, saves the result to a new pdf
+    Add page numbers, a footer and bookmarks to a pdf, saves the result to a new pdf
     :param pdf_path: source pdf
     :param new_path: name of destination pdf
     :param text: footer text
+    :param bookmarks: list of tuples, each tuple contains the page number and label for a bookmark
     """
     tmp = "__tmp.pdf"
 
     writer = PdfWriter()
     # 1. Create a reader object for the pdf to which we want to add page numbers
-    with open(pdf_path, "rb") as f:
-        reader = PdfReader(f)
+    with open(pdf_path, "rb") as fr:
+        reader = PdfReader(fr)
         n = len(reader.pages)
 
         # 2. create new PDF that contains a footer and page numbers
@@ -75,7 +73,6 @@ def add_page_numbers(pdf_path: str, new_path: str, text: str, bookmarks: list):
 
             # write result
             if len(writer.pages) > 0:
-                print(new_path)
                 with open(new_path, "wb") as f:
                     writer.write(f)
         # remove the pdf that just contains the page numbers
@@ -120,7 +117,7 @@ def merge_pdf_list(src_dir: str, dst_pdf_path: str, with_blank: bool = False):
     # go over each pdf in the src_dir and append it to the merger
     for path in input_path.glob("*.pdf"):
         # create a list of tuples for the bookmarks:
-        bookmarks.append( (len(merger.pages) , path.name) )
+        bookmarks.append((len(merger.pages), path.name))
 
         with open(path, "rb") as f:
             # the second argument sets a book mark
@@ -172,6 +169,7 @@ if __name__ == "__main__":
 
     # add page numbers and store in user provided location then delete the temporary file
     print(f"[INFO] numbering the pages and adding bookmarks in the file {tmp_path} and saving to {args.output_path}  ")
-    add_page_numbers(tmp_path, args.output_path, args.footer_text, bookmarks )
+    add_page_numbers(tmp_path, args.output_path, args.footer_text, bookmarks)
     os.remove(tmp_path)
 
+    print("[INFO] script finished succesfully ...")
